@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待办应用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .todo-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .todo-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .todo-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .todo-item:hover {
+            background-color: #f8f9fa;
+        }
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        .todo-text {
+            flex-grow: 1;
+            margin-left: 10px;
+        }
+        .delete-btn {
+            color: #dc3545;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        .add-form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .add-input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <div class="todo-header">
+            <h1 class="text-primary">待办事项</h1>
+            <p class="text-muted">管理您的日常任务</p>
+        </div>
+        
+        <form class="add-form" id="addForm">
+            <input type="text" class="form-control add-input" id="todoInput" placeholder="添加新的待办事项..." required>
+            <button type="submit" class="btn btn-primary">添加</button>
+        </form>
+        
+        <div class="todo-list" id="todoList">
+            <!-- Todo items will be added here dynamically -->
+        </div>
+        
+        <div class="mt-3 text-center">
+            <button class="btn btn-outline-secondary" id="clearCompleted">清除已完成项目</button>
+            <span class="ms-3 text-muted" id="itemCount">0 个项目</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const todoForm = document.getElementById('addForm');
+            const todoInput = document.getElementById('todoInput');
+            const todoList = document.getElementById('todoList');
+            const clearCompletedBtn = document.getElementById('clearCompleted');
+            const itemCountSpan = document.getElementById('itemCount');
+            
+            // Load todos from localStorage
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            
+            // Render todos
+            function renderTodos() {
+                todoList.innerHTML = '';
+                
+                todos.forEach((todo, index) => {
+                    const todoItem = document.createElement('div');
+                    todoItem.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                    todoItem.innerHTML = `
+                        <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} data-index="${index}">
+                        <span class="todo-text">${todo.text}</span>
+                        <button class="delete-btn" data-index="${index}">&times;</button>
+                    `;
+                    todoList.appendChild(todoItem);
+                });
+                
+                // Update item count
+                const totalItems = todos.length;
+                const completedItems = todos.filter(todo => todo.completed).length;
+                itemCountSpan.textContent = `${totalItems} 个项目，${completedItems} 个已完成`;
+            }
+            
+            // Add new todo
+            function addTodo(text) {
+                if (text.trim() !== '') {
+                    todos.push({
+                        text: text.trim(),
+                        completed: false,
+                        createdAt: new Date()
+                    });
+                    localStorage.setItem('todos', JSON.stringify(todos));
+                    renderTodos();
+                    todoInput.value = '';
+                }
+            }
+            
+            // Toggle todo completion status
+            function toggleTodo(index) {
+                todos[index].completed = !todos[index].completed;
+                localStorage.setItem('todos', JSON.stringify(todos));
+                renderTodos();
+            }
+            
+            // Delete todo
+            function deleteTodo(index) {
+                todos.splice(index, 1);
+                localStorage.setItem('todos', JSON.stringify(todos));
+                renderTodos();
+            }
+            
+            // Clear completed todos
+            function clearCompleted() {
+                todos = todos.filter(todo => !todo.completed);
+                localStorage.setItem('todos', JSON.stringify(todos));
+                renderTodos();
+            }
+            
+            // Event listeners
+            todoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                addTodo(todoInput.value);
+            });
+            
+            todoList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('todo-checkbox')) {
+                    const index = e.target.getAttribute('data-index');
+                    toggleTodo(parseInt(index));
+                } else if (e.target.classList.contains('delete-btn')) {
+                    const index = e.target.getAttribute('data-index');
+                    deleteTodo(parseInt(index));
+                }
+            });
+            
+            clearCompletedBtn.addEventListener('click', clearCompleted);
+            
+            // Initial render
+            renderTodos();
+        });
+    </script>
+</body>
+</html>
